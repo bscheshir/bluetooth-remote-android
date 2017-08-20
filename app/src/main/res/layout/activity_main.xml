@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ru.bscheshir.bluetoothremote.MainActivity"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:weightSum="2"
+    android:orientation="vertical"
+    >
+
+    <ToggleButton
+        android:id="@+id/toggleRedLed"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#FF0000"
+        android:textOff="OFF"
+        android:textOn="ON"
+        android:textSize="30dp"
+        android:layout_weight="0.67" />
+
+    <ToggleButton
+        android:id="@+id/toggleGreenLed"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#00FF00"
+        android:textOff="OFF"
+        android:textSize="30dp"
+        android:textOn="ON"
+        android:layout_weight="0.67" />
+
+    <SeekBar
+        android:id="@+id/seekBarVolume"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.67"
+        android:max="255"
+        android:progress="5" />
+
+    <TextView
+        android:id="@+id/textViewArduino"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:textAlignment="center"
+        android:visibility="visible"
+        android:textSize="30dp"
+        android:layout_weight="0.67" />
+
+</LinearLayout>
