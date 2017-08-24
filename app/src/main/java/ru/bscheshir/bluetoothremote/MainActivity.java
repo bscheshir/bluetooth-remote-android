@@ -35,9 +35,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         //Пишем данные в выходной поток
-        byte b = (byte) progress;
-        byte[] ba = new byte[2]; //пишем в поток массив из 2х байт.
-        ba[1] = b;
+        byte[] ba = new byte[3]; //пишем в поток массив из 2х байт.
+        ba[0] = (byte) 8;
+        ba[1] = (byte) progress;
         mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
     }
 
@@ -175,21 +175,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
 
         //Пытаемся послать данные
+        int pin = 0;
         int value = 0;
         //В зависимости от того, какая кнопка была нажата,
         //изменяем данные для посылки
         if (v == redButton) {
-            value = (redButton.isChecked() ? 1 : 0) + 130;
+            pin = 13;
+            value = (redButton.isChecked() ? 1 : 0);// + 130;
         } else if (v == greenButton) {
-            value = (greenButton.isChecked() ? 1 : 0) + 120;
+            pin = 12;
+            value = (greenButton.isChecked() ? 1 : 0);// + 120;
         }
 
         //Пишем данные в выходной поток
 //            String message
 //            byte[] msgBuffer = message.getBytes();
-        byte b = (byte) value;
-        byte[] ba = new byte[1]; //пишем в поток массив из 1 байта. 256 байт максимум за одну передачу HC-06(источник не помню)
-        ba[0] = b;
+        byte[] ba = new byte[3]; //пишем в поток массив из 3x байт. 256 байт максимум за одну передачу HC-06(источник не помню)
+        ba[0] = (byte) pin;
+        ba[1] = (byte) value;
         mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
     }
 

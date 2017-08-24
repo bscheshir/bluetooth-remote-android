@@ -34,7 +34,7 @@
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.67"
+        android:layout_weight="0.37"
         android:max="255"
         android:progress="5" />
 
@@ -45,6 +45,6 @@
         android:textAlignment="center"
         android:visibility="visible"
         android:textSize="30dp"
-        android:layout_weight="0.67" />
+        android:layout_weight="0.23" />
 
 </LinearLayout>
