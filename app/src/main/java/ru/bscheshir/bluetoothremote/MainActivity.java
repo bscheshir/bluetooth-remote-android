@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         byte[] ba = new byte[3]; //пишем в поток массив из 2х байт.
         ba[0] = (byte) 8;
         ba[1] = (byte) progress;
+        int i = ba[1];
+        txtArduino.setText(Integer.toString(i));    // обновляем TextView
         mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
     }
 
@@ -146,9 +148,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             mConnectedThread = new ConnectedThread(clientSocket);
             mConnectedThread.start();
-            Thread.State mConnectedThreadState = mConnectedThread.getState();
-            mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, mConnectedThreadState).sendToTarget();
-            String s = mConnectedThreadState.toString();
+//            Thread.State mConnectedThreadState = mConnectedThread.getState();
+//            mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, mConnectedThreadState).sendToTarget();
+//            String s = mConnectedThreadState.toString();
 
             //В случае появления любых ошибок, выводим в лог сообщение
         } catch (IOException e) {
