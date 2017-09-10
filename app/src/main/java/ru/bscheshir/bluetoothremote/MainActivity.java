@@ -35,10 +35,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         //Пишем данные в выходной поток
-        byte[] ba = new byte[3]; //пишем в поток массив из 2х байт.
-        ba[0] = (byte) 8;
-        ba[1] = (byte) progress;
-        int i = ba[1];
+        byte[] ba = new byte[4]; //пишем в поток массив из 2х байт.
+        ba[2] = (byte) 1;
+        ba[3] = (byte) progress;//-127..127
+        int i = ba[3];
         txtArduino.setText(Integer.toString(i));    // обновляем TextView
         mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
     }
