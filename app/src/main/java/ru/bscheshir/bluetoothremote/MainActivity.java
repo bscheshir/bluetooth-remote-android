@@ -24,7 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, Button.OnLongClickListener, SeekBar.OnSeekBarChangeListener {
     private static final String TAG = "BLUETOOTH";
 
     //Экземпляры классов наших кнопок
@@ -54,6 +54,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onStopTrackingTouch(SeekBar seekBar) {
 
     }
+
+    @Override
+    public boolean onLongClick(View v) {
+        int pin = 0;
+        int value = 0;
+        if (v == musicButton){
+            pin = 1;
+            value = 2;
+        }
+        byte[] ba = new byte[3]; //пишем в поток массив из 3x байт.
+        ba[0] = (byte) pin;
+        ba[1] = (byte) value;
+        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
+        return false;
+    }
+
+    //Как раз эта функция и будет вызываться при нажатии кнопок
+    @Override
+    public void onClick(View v) {
+
+        //Пытаемся послать данные
+        int pin = 0;
+        int value = 0;
+        //В зависимости от того, какая кнопка была нажата,
+        //изменяем данные для посылки
+        if (v == redButton) {
+            pin = 13;
+            value = (redButton.isChecked() ? 1 : 0);// + 130;
+        } else if (v == greenButton) {
+            pin = 12;
+            value = (greenButton.isChecked() ? 1 : 0);// + 120;
+        } else if (v == musicButton) {
+            pin = 1;
+            value = 1;
+        }
+
+
+        //Пишем данные в выходной поток
+//            String message
+//            byte[] msgBuffer = message.getBytes();
+        byte[] ba = new byte[3]; //пишем в поток массив из 3x байт.
+        ba[0] = (byte) pin;
+        ba[1] = (byte) value;
+        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
+    }
+
+
 
     // Определяем несколько констант для типов сообщений очереди между main activity и другими потоками
     private interface MessageConstants {
@@ -86,6 +133,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Добавлем "слушатель нажатий" к кнопке
         redButton.setOnClickListener(this);
         greenButton.setOnClickListener(this);
+        //Добавляем слушатели на кнопку управления платой mp3 плеера/степпера
+        musicButton.setOnClickListener(this);
+        musicButton.setOnLongClickListener(this);
         //Добавляем слушатель к дифференцированой полоске
         seekBarVolume.setOnSeekBarChangeListener(this);
 
@@ -174,34 +224,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Message toastMsg = mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, "CONNECTED");
         toastMsg.sendToTarget();
     }
-
-    //Как раз эта функция и будет вызываться при нажатии кнопок
-    @Override
-    public void onClick(View v) {
-
-        //Пытаемся послать данные
-        int pin = 0;
-        int value = 0;
-        //В зависимости от того, какая кнопка была нажата,
-        //изменяем данные для посылки
-        if (v == redButton) {
-            pin = 13;
-            value = (redButton.isChecked() ? 1 : 0);// + 130;
-        } else if (v == greenButton) {
-            pin = 12;
-            value = (greenButton.isChecked() ? 1 : 0);// + 120;
-        }
-
-        //Пишем данные в выходной поток
-//            String message
-//            byte[] msgBuffer = message.getBytes();
-        byte[] ba = new byte[3]; //пишем в поток массив из 3x байт. 256 байт максимум за одну передачу HC-06(источник не помню)
-        ba[0] = (byte) pin;
-        ba[1] = (byte) value;
-        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
-    }
-
-
 
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
