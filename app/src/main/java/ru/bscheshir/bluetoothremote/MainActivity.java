@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //Экземпляры классов наших кнопок
     ToggleButton redButton;
     ToggleButton greenButton;
+    Button musicButton;
     TextView txtArduino;
     SeekBar seekBarVolume;
 
@@ -77,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //"Соединям" вид кнопки в окне приложения с реализацией
         redButton = (ToggleButton) findViewById(R.id.toggleRedLed);
         greenButton = (ToggleButton) findViewById(R.id.toggleGreenLed);
+        musicButton = (Button) findViewById(R.id.musicButton);
         txtArduino = (TextView) findViewById(R.id.textViewArduino);      // для вывода текста, полученного от Arduino
         seekBarVolume = (SeekBar) findViewById(R.id.seekBarVolume);
 
