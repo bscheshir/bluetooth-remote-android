@@ -75,7 +75,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ba[0] = (byte) pin;
         ba[1] = (byte) value;
         mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
-        return false;
+        //Не нужна дальнейшая обработка события
+        return true;
     }
 
 
