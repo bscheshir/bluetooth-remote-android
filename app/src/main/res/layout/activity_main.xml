@@ -10,6 +10,15 @@
     >
 
     <ToggleButton
+        android:id="@+id/discoverButton"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:textOff="Поиск..."
+        android:textOn="Остановить..."
+        android:textSize="30dp"
+        android:layout_weight="0.40" />
+
+    <ToggleButton
         android:id="@+id/toggleRedLed"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -17,7 +26,7 @@
         android:textOff="OFF"
         android:textOn="ON"
         android:textSize="30dp"
-        android:layout_weight="0.67" />
+        android:layout_weight="0.40" />
 
     <ToggleButton
         android:id="@+id/toggleGreenLed"
@@ -27,14 +36,22 @@
         android:textOff="OFF"
         android:textSize="30dp"
         android:textOn="ON"
-        android:layout_weight="0.67" />
+        android:layout_weight="0.40" />
+
+    <Button
+        android:id="@+id/musicButton"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:textSize="30dp"
+        android:text="Музыка"
+        android:layout_weight="0.40" />
 
     <SeekBar
         android:id="@+id/seekBarVolume"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.37"
+        android:layout_weight="0.40"
         android:max="127"
         android:progress="5" />
 
@@ -45,6 +62,6 @@
         android:textAlignment="center"
         android:visibility="visible"
         android:textSize="30dp"
-        android:layout_weight="0.23" />
+        android:layout_weight="0.40" />
 
 </LinearLayout>

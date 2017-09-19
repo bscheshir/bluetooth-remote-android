@@ -3,12 +3,17 @@ package ru.bscheshir.bluetoothremote;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,20 +27,25 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, Button.OnLongClickListener, SeekBar.OnSeekBarChangeListener {
     private static final String TAG = "BLUETOOTH";
+    // SPP UUID сервиса. Должен совпадать с прописанным в мозгах НС-06
+    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     //Экземпляры классов наших кнопок
     ToggleButton redButton;
     ToggleButton greenButton;
+    ToggleButton discoverButton;
+    Button musicButton;
     TextView txtArduino;
     SeekBar seekBarVolume;
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         //Пишем данные в выходной поток
-        byte[] ba = new byte[4]; //пишем в поток массив из 2х байт.
+        byte[] ba = new byte[4]; //пишем в поток массив из 4х байт.
         ba[2] = (byte) 1;
         ba[3] = (byte) progress;//-127..127
         int i = ba[3];
@@ -53,6 +63,62 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @Override
+    public boolean onLongClick(View v) {
+        int pin = 1;
+        int value = 0;
+        if (v == musicButton){
+            pin = 1;
+            value = 2;
+        }
+        byte[] ba = new byte[4]; //пишем в поток массив из 4x байт.
+        ba[0] = (byte) pin;
+        ba[1] = (byte) value;
+        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
+        return false;
+    }
+
+
+    //Эта функция и будет вызываться при нажатии кнопок
+    @Override
+    public void onClick(View v) {
+
+        //кнопка поиска. Создаём локальную переменную, аналогично onCreate
+        if (v == discoverButton) {
+
+            if(discoverButton.isChecked()) {
+                mBluetoothAdapter.startDiscovery();
+            } else {
+                mBluetoothAdapter.cancelDiscovery();
+            }
+            return;
+        }
+
+        //Пытаемся послать данные
+        int pin = 0;
+        int value = 0;
+        //В зависимости от того, какая кнопка была нажата,
+        //изменяем данные для посылки
+        if (v == redButton) {
+            pin = 13;
+            value = (redButton.isChecked() ? 1 : 0);// + 130;
+        } else if (v == greenButton) {
+            pin = 12;
+            value = (greenButton.isChecked() ? 1 : 0);// + 120;
+        } else if (v == musicButton) {
+            pin = 1;
+            value = 1;
+        }
+
+        //Пишем данные в выходной поток
+//            String message
+//            byte[] msgBuffer = message.getBytes();
+        byte[] ba = new byte[4]; //пишем в поток массив из 4x байт.
+        ba[0] = (byte) pin;
+        ba[1] = (byte) value;
+        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
+    }
+
     // Определяем несколько констант для типов сообщений очереди между main activity и другими потоками
     private interface MessageConstants {
         public static final int MESSAGE_NONE = 0;
@@ -62,7 +128,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // ... (Add other message types here as needed.)
     }
 
-    private Handler mHandler; // handler that gets info from Bluetooth service
+    private Handler mHandler; // handler для получения информации из Bluetooth. Отделённый хеадер с сообщениями
+    private BluetoothAdapter mBluetoothAdapter = null;
     private StringBuilder sb = new StringBuilder(); //хранение принимаемой строки
     private ConnectedThread mConnectedThread; // тред, отвечающий за приём и отправку сообщений по bluetooth
 
@@ -77,40 +144,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //"Соединям" вид кнопки в окне приложения с реализацией
         redButton = (ToggleButton) findViewById(R.id.toggleRedLed);
         greenButton = (ToggleButton) findViewById(R.id.toggleGreenLed);
+        discoverButton = (ToggleButton) findViewById(R.id.discoverButton);
+        musicButton = (Button) findViewById(R.id.musicButton);
         txtArduino = (TextView) findViewById(R.id.textViewArduino);      // для вывода текста, полученного от Arduino
         seekBarVolume = (SeekBar) findViewById(R.id.seekBarVolume);
 
         //Добавлем "слушатель нажатий" к кнопке
         redButton.setOnClickListener(this);
         greenButton.setOnClickListener(this);
+        discoverButton.setOnClickListener(this);
+        //Добавляем слушатели на кнопку управления платой mp3 плеера/степпера
+        musicButton.setOnClickListener(this);
+        musicButton.setOnLongClickListener(this);
         //Добавляем слушатель к дифференцированой полоске
         seekBarVolume.setOnSeekBarChangeListener(this);
-
-        //Включаем bluetooth. Если он уже включен, то ничего не произойдет
-        String enableBT = BluetoothAdapter.ACTION_REQUEST_ENABLE;
-        startActivityForResult(new Intent(enableBT), 0);
-
-        //Мы хотим использовать тот bluetooth-адаптер, который задается по умолчанию
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        //Устройство с данным адресом - наш Bluetooth
-        //Адрес опредеяется следующим образом: установите соединение
-        //между ПК и модулем (пин: 1234), а затем посмотрите в настройках
-        //соединения адрес модуля. Скорее всего он будет аналогичным.
-        String deviceName = "HC-06";
-        String deviceHardwareAddress = "98:D3:32:30:EB:AC";
-        //Перебираем сопряженные устройства
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                String currentDeviceName = device.getName();
-                if (deviceName.equalsIgnoreCase(currentDeviceName)) {
-                    deviceHardwareAddress = device.getAddress(); // MAC address
-                    break;
-                }
-            }
-        }
 
         // добавляем хандлер с встроеной очередью для приёма сообщений из тредов.
         // Его можно вызвать из другого треда и отправить себе сообщение
@@ -126,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (endOfLineIndex > 0) {                                           // если встречаем конец строки,
                             String stringBufferLine = sb.substring(0, endOfLineIndex);      // то извлекаем строку
                             sb.delete(0, sb.length());                                      // и очищаем sb
-                            txtArduino.setText(stringBufferLine);    // обновляем TextView
+                            txtArduino.setText(stringBufferLine);                           // обновляем TextView
                         }
                         Log.d(TAG, "...Строка:" + sb.toString() + "Байт:" + msg.arg1 + "...");
                         break;
@@ -137,9 +184,90 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         };
 
+        tryConnect();
+
+        // Регистрация оповещения/широковещания, когда устройство найдено
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter);
+
+        //Выводим сообщение об успешном подключении
+        Message toastMsg = mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, "CONNECTED");
+        toastMsg.sendToTarget();
+    }
+
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+////        mConnectedThread.cancel();
+//    }
+//
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//
+////        if (mConnectedThread != null) {
+////            mConnectedThread.cancel();
+////        }
+////        tryConnect();
+//    }
+
+    //подключение вынесем в отдельный метод
+    public void tryConnect() {
+
+        //Включаем bluetooth. Если он уже включен, то ничего не произойдет
+        String enableBT = BluetoothAdapter.ACTION_REQUEST_ENABLE;
+        startActivityForResult(new Intent(enableBT), 0);
+
+        //Мы хотим использовать тот bluetooth-адаптер, который задается по умолчанию
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        //Устройство с данным адресом - наш Bluetooth
+        //Адрес опредеяется следующим образом: установите соединение
+        //между ПК и модулем (пин: 1234), а затем посмотрите в настройках
+        //соединения адрес модуля. Скорее всего он будет аналогичным.
+
+        //Читаем значения по умолчанию
+        String defaultDeviceName = getResources().getString(R.string.default_device_name);
+        String defaultDeviceHardwareAddress = getResources().getString(R.string.default_device_hardware_address);
+        //Читаем сохранённые в настройках значения
+        SharedPreferences sharedPref = this.getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        String deviceName = sharedPref.getString(getString(R.string.device_name), defaultDeviceName);
+        String deviceHardwareAddress = sharedPref.getString(getString(R.string.device_hardware_address), defaultDeviceHardwareAddress);
+
+        //Перебираем сопряженные устройства
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        if (pairedDevices.size() > 0) {
+            // There are paired devices. Get the name and address of each paired device.
+            for (BluetoothDevice device : pairedDevices) {
+                String currentDeviceName = device.getName();
+                if (deviceName.equalsIgnoreCase(currentDeviceName)) {
+                    deviceHardwareAddress = device.getAddress(); // MAC address
+                    break;
+                }
+            }
+        }
+
         //Пытаемся проделать эти действия
         try {
+            //Установить указатель на удалённый узел с таким адресом
             BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
+
+
+
+                //Две вещи необходимы для соединения - MAC address устройства
+                //UUID сервиса (этого приложения)
+//                clientSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
+//            } catch (IOException e) {
+//                Log.d(TAG, e.getMessage());
+//            }
+
+            // Экономия ресурсов.
+            mBluetoothAdapter.cancelDiscovery();
+
+
+
+
 
             //Инициируем соединение с устройством
             Method m = device.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
@@ -166,40 +294,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (InvocationTargetException e) {
             Log.d(TAG, e.getMessage());
         }
-
-        //Выводим сообщение об успешном подключении
-        Message toastMsg = mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, "CONNECTED");
-        toastMsg.sendToTarget();
     }
 
-    //Как раз эта функция и будет вызываться при нажатии кнопок
-    @Override
-    public void onClick(View v) {
+    // Тред для получения найденого устройства
+    // Создание приёмника BroadcastReceiver для ACTION_FOUND
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction(); // Намерение по фильтру
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Поиск устройств нашел устройство. Получить объект BluetoothDevice и его инфо из намерения
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
 
-        //Пытаемся послать данные
-        int pin = 0;
-        int value = 0;
-        //В зависимости от того, какая кнопка была нажата,
-        //изменяем данные для посылки
-        if (v == redButton) {
-            pin = 13;
-            value = (redButton.isChecked() ? 1 : 0);// + 130;
-        } else if (v == greenButton) {
-            pin = 12;
-            value = (greenButton.isChecked() ? 1 : 0);// + 120;
+                // Записать в общие настройки
+                SharedPreferences sharedPref = context.getSharedPreferences(
+                        getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.device_name), deviceName);
+                editor.putString(getString(R.string.device_hardware_address), deviceHardwareAddress);
+                editor.commit();
+            }
         }
-
-        //Пишем данные в выходной поток
-//            String message
-//            byte[] msgBuffer = message.getBytes();
-        byte[] ba = new byte[3]; //пишем в поток массив из 3x байт. 256 байт максимум за одну передачу HC-06(источник не помню)
-        ba[0] = (byte) pin;
-        ba[1] = (byte) value;
-        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
-    }
+    };
 
 
-
+    //Тред для общения с блютузом. Для приёма в отрыве от MainActivity
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
@@ -277,11 +397,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Вызывается в main activity для закрытия соединения
         public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                Log.e(TAG, "Could not close the connect socket", e);
+            //сначала потоки, потом сокет
+            if (mmInStream != null) {
+                try {
+                    mmInStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not close the input stream", e);
+                }
+            }
+            if (mmOutStream != null) {
+                try {
+                    mmOutStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not close the output stream", e);
+                }
+            }
+            if (mmSocket != null) {
+                try {
+                    mmSocket.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not close the connect socket", e);
+                }
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Не забывать "разрегистрировать" приёмник действия нахождения устройства - ACTION_FOUND.
+        unregisterReceiver(mReceiver);
     }
 }
