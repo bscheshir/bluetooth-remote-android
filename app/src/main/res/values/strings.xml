@@ -3,6 +3,6 @@
     <string name="preference_file_key">BluetoothRemote</string>
     <string name="default_device_name">HC-06</string>
     <string name="default_device_hardware_address">98:D3:32:30:EB:AC</string>
-    <string name="device_name"></string>
-    <string name="device_hardware_address"></string>
+    <string name="device_name">deviceName</string>
+    <string name="device_hardware_address">deviceHardwareAddress</string>
 </resources>

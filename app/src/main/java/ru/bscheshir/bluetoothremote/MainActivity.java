@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if(discoverButton.isChecked()) {
                 mBluetoothAdapter.startDiscovery();
+                tryConnect();
             } else {
                 mBluetoothAdapter.cancelDiscovery();
             }
@@ -195,21 +196,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         toastMsg.sendToTarget();
     }
 
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-////        mConnectedThread.cancel();
-//    }
-//
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//
-////        if (mConnectedThread != null) {
-////            mConnectedThread.cancel();
-////        }
-////        tryConnect();
-//    }
+    @Override
+    public void onStop() {
+        super.onStop();
+        mConnectedThread.cancel();
+        mConnectedThread = null;
+    }
+
+    @Override
+    public void onRestart() {
+        super.onRestart();
+        mConnectedThread = new ConnectedThread(clientSocket);
+        mConnectedThread.start();
+    }
 
     //подключение вынесем в отдельный метод
     public void tryConnect() {
@@ -247,35 +246,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
+        // Экономия ресурсов.
+        mBluetoothAdapter.cancelDiscovery();
+
+        //Установить указатель на удалённый узел с таким адресом
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
 
         //Пытаемся проделать эти действия
         try {
-            //Установить указатель на удалённый узел с таким адресом
-            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
 
+            //Две вещи необходимы для соединения - MAC address устройства
+            //UUID сервиса (этого приложения)
+//            clientSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
 
-
-                //Две вещи необходимы для соединения - MAC address устройства
-                //UUID сервиса (этого приложения)
-//                clientSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-//            } catch (IOException e) {
-//                Log.d(TAG, e.getMessage());
-//            }
-
-            // Экономия ресурсов.
-            mBluetoothAdapter.cancelDiscovery();
-
-
-
-
-
-            //Инициируем соединение с устройством
+            //Инициируем соединение с устройством альтернативным методом, без UUID
             Method m = device.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
             clientSocket = (BluetoothSocket) m.invoke(device, 1);
             clientSocket.connect();
 
             mConnectedThread = new ConnectedThread(clientSocket);
             mConnectedThread.start();
+
 //            Thread.State mConnectedThreadState = mConnectedThread.getState();
 //            mHandler.obtainMessage(MessageConstants.MESSAGE_TOAST, mConnectedThreadState).sendToTarget();
 //            String s = mConnectedThreadState.toString();
