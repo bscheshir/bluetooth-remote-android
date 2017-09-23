@@ -28,20 +28,20 @@
         android:textSize="30dp"
         android:layout_weight="0.30" />
 
-    <ToggleButton
-        android:id="@+id/toggleGreenLed"
+    <Button
+        android:id="@+id/stepperButton"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="#00FF00"
-        android:textOff="OFF"
         android:textSize="30dp"
-        android:textOn="ON"
-        android:layout_weight="0.30" />
+        android:text="Фигурка"
+        android:layout_weight="0.40" />
 
     <Button
         android:id="@+id/musicButton"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:background="#0000FF"
         android:textSize="30dp"
         android:text="Музыка"
         android:layout_weight="0.40" />

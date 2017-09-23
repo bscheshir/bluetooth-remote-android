@@ -37,9 +37,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     //Экземпляры классов наших кнопок
     ToggleButton redButton;
-    ToggleButton greenButton;
     ToggleButton discoverButton;
     Button musicButton;
+    Button stepperButton;
     TextView txtArduino;
     SeekBar seekBarVolume;
 
@@ -104,9 +104,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v == redButton) {
             pin = 13;
             value = (redButton.isChecked() ? 1 : 0);// + 130;
-        } else if (v == greenButton) {
+        } else if (v == stepperButton) {
             pin = 12;
-            value = (greenButton.isChecked() ? 1 : 0);// + 120;
+            value = 1;
         } else if (v == musicButton) {
             pin = 1;
             value = 1;
@@ -145,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //"Соединям" вид кнопки в окне приложения с реализацией
         redButton = (ToggleButton) findViewById(R.id.toggleRedLed);
-        greenButton = (ToggleButton) findViewById(R.id.toggleGreenLed);
+        stepperButton = (Button) findViewById(R.id.stepperButton);
         discoverButton = (ToggleButton) findViewById(R.id.discoverButton);
         musicButton = (Button) findViewById(R.id.musicButton);
         txtArduino = (TextView) findViewById(R.id.textViewArduino);      // для вывода текста, полученного от Arduino
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Добавлем "слушатель нажатий" к кнопке
         redButton.setOnClickListener(this);
-        greenButton.setOnClickListener(this);
+        stepperButton.setOnClickListener(this);
         discoverButton.setOnClickListener(this);
         //Добавляем слушатели на кнопку управления платой mp3 плеера/степпера
         musicButton.setOnClickListener(this);
