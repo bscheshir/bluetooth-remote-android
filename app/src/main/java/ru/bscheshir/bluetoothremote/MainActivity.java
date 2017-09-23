@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -44,13 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        //Пишем данные в выходной поток
-        byte[] ba = new byte[4]; //пишем в поток массив из 4х байт.
-        ba[2] = (byte) 1;
-        ba[3] = (byte) progress;//-127..127
-        int i = ba[3];
-        txtArduino.setText(Integer.toString(i));    // обновляем TextView
-        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
+        txtArduino.setText(Integer.toString(seekBarVolume.getProgress()));    // обновляем TextView
     }
 
     @Override
@@ -60,7 +55,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-
+        int progress = seekBarVolume.getProgress();
+        //Пишем данные в выходной поток
+        byte[] ba = new byte[4]; //пишем в поток массив из 4х байт.
+        ba[2] = (byte) 1;
+        ba[3] = (byte) progress;//-127..127
+        mConnectedThread.write(ba);//используем специализированый тред. Из основного просто вызываем его ф-ю
     }
 
     @Override
@@ -367,7 +367,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void write(byte[] bytes) {
             try {
                 mmOutStream.write(bytes);
-
+                SystemClock.sleep(30);
                 // Расшарить буфер, из которого сейчас/ранее получали для UI
                 // предполагается, что из него и отправляем в другое устройство
                 Message writtenMsg = mHandler.obtainMessage(
